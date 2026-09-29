@@ -1,0 +1,485 @@
+<title>MindFlow 개발 기록</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --ground:#EDECF0; --surface:#F8F7FB; --sunk:#E4E2EA;
+  --ink:#191722; --ink-2:#3D3950; --muted:#65617C; --faint:#8B879E;
+  --rule:#D6D3DE; --rule-soft:#E3E0E9;
+  --accent:#4A3AA8; --accent-2:#6B57D6; --accent-soft:#E6E1F8;
+  --add:#1E6B41; --del:#9E2F35;
+  --shadow:0 1px 2px rgba(25,23,34,.05), 0 8px 24px -16px rgba(25,23,34,.25);
+  --f-display:"Gowun Batang", Georgia, "Nanum Myeongjo", serif;
+  --f-body:"IBM Plex Sans KR", -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#131118; --surface:#1B1924; --sunk:#100E16;
+    --ink:#EBE9F3; --ink-2:#C9C5DA; --muted:#9C97B2; --faint:#726D88;
+    --rule:#302C3E; --rule-soft:#26232F;
+    --accent:#AB9CF7; --accent-2:#C2B6FF; --accent-soft:#241F3A;
+    --add:#6EC48F; --del:#E28A8F;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#131118; --surface:#1B1924; --sunk:#100E16;
+  --ink:#EBE9F3; --ink-2:#C9C5DA; --muted:#9C97B2; --faint:#726D88;
+  --rule:#302C3E; --rule-soft:#26232F;
+  --accent:#AB9CF7; --accent-2:#C2B6FF; --accent-soft:#241F3A;
+  --add:#6EC48F; --del:#E28A8F;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:var(--f-body); font-weight:400; font-size:16.5px; line-height:1.75;
+  -webkit-font-smoothing:antialiased; word-break:keep-all;
+}
+a{color:var(--accent); text-decoration-thickness:1px; text-underline-offset:3px}
+a:hover{color:var(--accent-2)}
+:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:2px}
+
+/* ── 그리드: 좌측 주석 레일 + 본문 ── */
+.wrap{max-width:1080px; margin:0 auto; padding:0 24px}
+.rail{
+  display:grid; grid-template-columns:200px minmax(0,1fr);
+  gap:0 40px; align-items:start;
+}
+.rail > .note{grid-column:1; padding-top:.35rem}
+.rail > .body{grid-column:2; min-width:0}
+@media (max-width:860px){
+  .rail{grid-template-columns:minmax(0,1fr)}
+  .rail > .note, .rail > .body{grid-column:1}
+  .rail > .note{
+    padding:.1rem 0 .1rem 14px; margin-bottom:.9rem;
+    border-left:2px solid var(--accent);
+  }
+}
+.note{
+  font-family:var(--f-mono); font-size:12.5px; line-height:1.65;
+  color:var(--muted); text-align:right;
+}
+@media (max-width:860px){ .note{text-align:left} }
+.note b{display:block; color:var(--accent); font-weight:600; letter-spacing:.04em}
+
+/* ── 타이포 ── */
+h1,h2,h3{font-family:var(--f-display); font-weight:700; text-wrap:balance; margin:0}
+h1{font-size:clamp(2.6rem,7vw,4.4rem); line-height:1.08; letter-spacing:-.02em}
+h2{font-size:clamp(1.6rem,3.4vw,2.15rem); line-height:1.25; letter-spacing:-.01em}
+h3{font-size:1.1rem; line-height:1.4; font-family:var(--f-body); font-weight:600}
+p{margin:0 0 1.15rem; max-width:66ch}
+.lede{font-size:1.15rem; color:var(--ink-2); line-height:1.72}
+.eyebrow{
+  font-family:var(--f-mono); font-size:11.5px; font-weight:600;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--accent);
+  margin:0 0 .9rem;
+}
+em.q{font-style:normal; background:var(--accent-soft); padding:.08em .3em; border-radius:2px}
+strong{font-weight:600; color:var(--ink)}
+
+/* ── 헤더 ── */
+header{padding:clamp(64px,11vw,124px) 0 clamp(48px,7vw,76px); border-bottom:1px solid var(--rule)}
+.kicker{
+  font-family:var(--f-mono); font-size:12px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--faint); margin:0 0 1.6rem;
+}
+h1 .sub{
+  display:block; font-family:var(--f-body); font-size:clamp(1.02rem,1.5vw,1.2rem);
+  font-weight:400; color:var(--muted); margin-top:1.4rem; max-width:52ch;
+  letter-spacing:0; line-height:1.7; text-wrap:pretty;
+}
+
+/* ── diff 바 (히어로 논지) ── */
+.diff{margin:clamp(40px,6vw,64px) 0 0; max-width:720px}
+.diff-nums{
+  display:flex; flex-wrap:wrap; gap:.35rem 1.6rem; align-items:baseline;
+  font-family:var(--f-mono); font-variant-numeric:tabular-nums;
+  font-size:clamp(1.4rem,4vw,2rem); font-weight:600; margin-bottom:1rem;
+}
+.diff-nums .a{color:var(--add)} .diff-nums .d{color:var(--del)}
+.diff-nums small{font-size:.55em; font-weight:400; color:var(--faint); letter-spacing:.06em}
+.bar{height:12px; display:flex; border-radius:2px; overflow:hidden; background:var(--sunk)}
+.bar span{display:block; height:100%; width:0; animation:grow 1.1s cubic-bezier(.16,.84,.44,1) .25s forwards}
+.bar .a{background:var(--add)} .bar .d{background:var(--del); opacity:.85}
+@keyframes grow{to{width:var(--w)}}
+@media (prefers-reduced-motion:reduce){ .bar span{animation:none; width:var(--w)} }
+.diff-cap{font-family:var(--f-mono); font-size:12.5px; color:var(--muted); margin-top:.9rem; letter-spacing:.02em}
+
+/* ── 섹션 ── */
+section{padding:clamp(56px,8vw,92px) 0; border-bottom:1px solid var(--rule)}
+section:last-of-type{border-bottom:none}
+
+/* ── 통계 ── */
+.stats{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:3px; overflow:hidden;
+}
+.stat{background:var(--surface); padding:20px 18px}
+.stat dt{font-family:var(--f-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); margin-bottom:.5rem}
+.stat dd{
+  margin:0; font-family:var(--f-mono); font-variant-numeric:tabular-nums;
+  font-size:1.5rem; font-weight:600; line-height:1.15; letter-spacing:-.01em;
+}
+.stat dd small{display:block; font-family:var(--f-body); font-size:.62rem; font-weight:400; color:var(--muted); letter-spacing:0; margin-top:.4rem; line-height:1.5}
+
+/* ── 실패 모드 ── */
+.modes{display:grid; gap:1px; background:var(--rule); border-block:1px solid var(--rule); margin:2rem 0 0}
+.mode{background:var(--ground); padding:22px 0 22px 0; display:grid; grid-template-columns:2.2rem 1fr; gap:0 16px}
+.mode .n{font-family:var(--f-mono); font-size:12px; font-weight:600; color:var(--accent); padding-top:.42rem}
+.mode p{margin:0; font-size:1.02rem}
+.mode p b{color:var(--ink)}
+
+/* ── 카드 ── */
+.cards{display:grid; gap:14px; margin-top:2rem}
+.card{
+  background:var(--surface); border:1px solid var(--rule); border-radius:4px;
+  padding:20px 22px; box-shadow:var(--shadow);
+}
+.card-h{display:flex; gap:12px; align-items:baseline; margin-bottom:.6rem}
+.card-h .idx{font-family:var(--f-mono); font-size:12px; font-weight:600; color:var(--accent); flex:none}
+.card-h h3{flex:1}
+.card p{margin:0; color:var(--ink-2); font-size:.95rem}
+.card .learn{
+  display:block; margin-top:.7rem; padding-top:.7rem; border-top:1px dashed var(--rule);
+  font-family:var(--f-mono); font-size:12px; color:var(--muted); line-height:1.6;
+}
+.card .learn b{color:var(--accent); font-weight:600}
+
+/* ── 커밋 명세 ── */
+.commit{
+  background:var(--sunk); border:1px solid var(--rule); border-radius:4px;
+  overflow:hidden; margin-top:2rem;
+}
+.commit-t{
+  font-family:var(--f-mono); font-size:13px; font-weight:600; padding:14px 18px;
+  border-bottom:1px solid var(--rule); color:var(--ink); background:var(--surface);
+  overflow-x:auto; white-space:nowrap;
+}
+.slots{display:grid; gap:1px; background:var(--rule)}
+.slot{background:var(--surface); padding:14px 18px; display:grid; grid-template-columns:64px 1fr; gap:0 14px}
+@media (max-width:600px){ .slot{grid-template-columns:1fr; gap:.3rem} }
+.slot .k{font-family:var(--f-mono); font-size:11.5px; font-weight:600; color:var(--accent); letter-spacing:.06em; padding-top:.2rem}
+.slot .v{font-size:.92rem; color:var(--ink-2); line-height:1.7}
+.slot .v code{font-family:var(--f-mono); font-size:.88em; background:var(--accent-soft); padding:.06em .3em; border-radius:2px}
+
+/* ── 코드 ── */
+pre{
+  margin:1.4rem 0 0; padding:16px 18px; background:var(--sunk);
+  border:1px solid var(--rule); border-radius:4px; overflow-x:auto;
+  font-family:var(--f-mono); font-size:12.5px; line-height:1.72; color:var(--ink-2);
+}
+pre b{color:var(--accent); font-weight:600}
+pre .c{color:var(--faint)}
+pre .no{color:var(--del)} pre .yes{color:var(--add)}
+
+/* ── 접은 것 ── */
+.cuts{list-style:none; padding:0; margin:2rem 0 0; display:grid; gap:1px; background:var(--rule); border-block:1px solid var(--rule)}
+.cuts li{background:var(--ground); padding:16px 0; display:grid; grid-template-columns:1fr auto; gap:4px 20px; align-items:baseline}
+.cuts .what{font-weight:600; font-size:1rem}
+.cuts .n{font-family:var(--f-mono); font-variant-numeric:tabular-nums; font-size:.9rem; font-weight:600; color:var(--del); white-space:nowrap}
+.cuts .why{grid-column:1/-1; font-size:.92rem; color:var(--muted); margin:0; max-width:64ch}
+
+/* ── 한계 ── */
+.limits{list-style:none; padding:0; margin:1.6rem 0 0; display:grid; gap:.9rem}
+.limits li{padding-left:22px; position:relative; color:var(--ink-2); font-size:.97rem; max-width:66ch}
+.limits li::before{
+  content:"·"; position:absolute; left:0; top:0; color:var(--faint);
+  font-family:var(--f-mono); font-size:.9em;
+}
+
+/* ── 파일 트리 ── */
+.tree{
+  font-family:var(--f-mono); font-size:12.5px; line-height:1.9; color:var(--ink-2);
+  background:var(--sunk); border:1px solid var(--rule); border-radius:4px;
+  padding:16px 18px; margin-top:2rem; overflow-x:auto; white-space:pre;
+}
+.tree b{color:var(--ink); font-weight:600}
+.tree i{color:var(--faint); font-style:normal}
+
+footer{padding:56px 0 72px; color:var(--faint); font-size:.86rem}
+footer p{max-width:60ch}
+</style>
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="rail">
+    <div class="note"><b>2026.04 - 08</b>113일, 283커밋<br>1인 개발</div>
+    <div class="body">
+      <p class="kicker">Claude Code와 만든 개인 PWA</p>
+      <h1>MindFlow 개발 기록
+        <span class="sub">개인용 메모/마인드맵/캘린더 PWA를 Claude Code와 같이 4개월 가까이 만들었다. 바이브 코딩으로 시작했다가 3주쯤 지나 세션마다 같은 문제를 다르게 풀고 있는 걸 보고, 규칙과 검증 절차, 커밋 본문 형식을 붙여 가며 진행했다.</span>
+      </h1>
+
+      <div class="diff">
+        <div class="diff-nums">
+          <span class="a">+53,588</span>
+          <span class="d">−28,483</span>
+          <small>누적 변경, 기준 시점 코드 20,637줄</small>
+        </div>
+        <div class="bar">
+          <span class="a" style="--w:65.3%"></span>
+          <span class="d" style="--w:34.7%"></span>
+        </div>
+        <p class="diff-cap">추가한 줄 대비 지운 줄이 53% 정도 된다. 기능을 여러 번 접었고 CSS도 한 번 통째로 다시 썼다.</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="rail">
+    <div class="note"><b>기준 커밋</b>8a428f8<br>(2026-08-16)</div>
+    <div class="body">
+      <p class="eyebrow">숫자</p>
+      <h2>git 기록에서 계산한 값</h2>
+      <dl class="stats">
+        <div class="stat"><dt>커밋</dt><dd>283</dd></div>
+        <div class="stat"><dt>Claude Code와 함께 작성</dt><dd>227<small>전체의 80%</small></dd></div>
+        <div class="stat"><dt>본문 200자 초과</dt><dd>238<small>84%</small></dd></div>
+        <div class="stat"><dt>코드</dt><dd>20,637<small>JS 17개 + styles.css + index.html</small></dd></div>
+        <div class="stat"><dt>빌드 시스템</dt><dd>없음<small>바닐라 JS, deferred 순서 의존</small></dd></div>
+        <div class="stat"><dt>기능 삭제</dt><dd>−1,813<small>가계부, 루틴, 도달 불가 페이지</small></dd></div>
+      </dl>
+      <pre>C=8a428f8
+git rev-list --count $C                                        <span class="c"># 283</span>
+git log $C --numstat --format="" | awk '{a+=$1;d+=$2} END{print a,d}'</pre>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="rail">
+    <div class="note"><b>배경</b>2주 정도는 잘 됐다</div>
+    <div class="body">
+      <p class="eyebrow">왜 기록했나</p>
+      <h2>3주쯤 지나면서 생긴 문제</h2>
+      <p class="lede">코드가 커지면서 생긴 문제는 대부분 세션 간에 맥락이 끊겨서였다.</p>
+
+      <div class="modes">
+        <div class="mode"><span class="n">01</span>
+          <p>세션이 바뀌면 이전 결정을 모른다. 같은 의미의 아이콘이 화면마다 달라지고, 이미 되돌린 시도를 또 한다.</p></div>
+        <div class="mode"><span class="n">02</span>
+          <p>시키면 다 만들어 주니까 기능이 계속 늘기만 한다. 빼자는 얘기는 AI가 먼저 하지 않는다.</p></div>
+        <div class="mode"><span class="n">03</span>
+          <p>"테스트했습니다"라는 말을 그대로 믿기 어렵다. 추정이 확인된 사실처럼 나오는 경우가 있다.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="rail">
+    <div class="note"><b>발췌 06</b>토큰 만료 오탐</div>
+    <div class="body">
+      <p class="eyebrow">버그를 맡기는 방식</p>
+      <h2>원인 경로부터 찾게 했다</h2>
+      <p>"가끔 동기화 실패가 떠요." 재현 조건도 로그도 없었다. 그냥 고쳐달라고 하면 AI는 실패 표시를 안 뜨게 만드는 쪽으로 간다.</p>
+      <pre>"동기화 실패 뜨는 거 고쳐줘"
+대신
+"실패 표시가 켜지는 코드 경로를 전부 찾아서,
+ 각 분기가 성립하는 조건을 나열해줘"</pre>
+      <p style="margin-top:1.4rem">원인이 셋 겹쳐 있었다. 만료가 임박하면 갱신 타이머가 아예 안 잡히는 분기, iOS PWA 백그라운드에서 <code style="font-family:var(--f-mono);font-size:.9em">setTimeout</code>이 안 도는 문제,
+      15초마다 도는 폴링이 갱신 시도 없이 바로 error를 찍는 코드. 하나만 고쳤으면 빈도만 줄었을 것이다.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="rail">
+    <div class="note"><b>CLAUDE.md</b>세션 시작 때<br>자동으로 읽힌다</div>
+    <div class="body">
+      <p class="eyebrow">규칙</p>
+      <h2>금지 규칙에는 이유와 날짜를 붙였다</h2>
+      <p>어느 세션에서 AI가 첨부 파일 링크에 타입별로 📄📊🎬 같은 이모지를 붙였다. 목록이 산만해졌고, 다음 세션은 그 매핑을 모르고 또 다른 이모지를 골랐다. 되돌리면서 이렇게 적었다.</p>
+      <pre><span class="c">// CLAUDE.md</span>
+### 3-1. ❌ 금지 — 파일 타입별 이모지 다양화
+메모 본문에 삽입되는 마크다운 링크는 모든 파일에 동일 표지자(📎) 사용.
+파일 타입별로 📄📝📊🗜️🎬🎵 다양화하면 일관성 깨짐
+(해본 적 있음, 2026-05-29 revert).</pre>
+      <p style="margin-top:1.4rem">"해본 적 있음"과 날짜가 없으면 다음 세션이 더 나은 UX라고 보고 다시 시도한다. 8월 16일에 추가한 집중 타이머 버튼도 이 규칙대로 Material Symbols를 쓰고 있다.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="rail">
+    <div class="note"><b>커밋 본문</b>다음 세션이<br>읽고 들어갈 기록</div>
+    <div class="body">
+      <p class="eyebrow">기록</p>
+      <h2>커밋 본문 형식</h2>
+      <p>다음 세션은 이번 대화를 모르니까 커밋 본문과 주석이 인수인계 역할을 한다. 본문은 규약, 증상, 수정, 검증 순으로 썼다.</p>
+
+      <div class="commit">
+        <div class="commit-t">fix(gcal): 종일 일정이 만들어지지 않던 문제 — end.date 미포함 규약</div>
+        <div class="slots">
+          <div class="slot"><div class="k">규약</div><div class="v">Google Calendar의 종일 일정 <code>end.date</code>는 ‘미포함(exclusive)’이다. 7월 29일 하루짜리 = start <code>2026-07-29</code> / end <code>2026-07-30</code>.</div></div>
+          <div class="slot"><div class="k">증상</div><div class="v">입력값을 그대로 보내 <code>start == end</code>가 되어 길이 0짜리 일정이 만들어졌다. 표시 조건이 <code>start &lt;= day &lt; end</code>라 어떤 날에도 안 걸려 영원히 안 보였다.</div></div>
+          <div class="slot"><div class="k">수정</div><div class="v"><code>_gcalShiftDateStr</code> / <code>_gcalShiftDays</code> 헬퍼 추가. 저장 시 종일이면 종료일 +1일, 편집으로 열 때 −1일.</div></div>
+          <div class="slot"><div class="k">검증</div><div class="v">순수 함수 재현. 하루짜리가 해당 날에만 표시 / 3일짜리가 정확히 3일 / 편집 왕복 시 원래 입력값 복원 / 월말 경계(7/31 → 8/1) / 종료일 공백 보정.</div></div>
+        </div>
+      </div>
+      <p style="margin-top:1.6rem">주석에는 하면 안 되는 걸 주로 적었다. 아래 두 개는 둘 다 한 번 겪은 버그에서 나왔다.</p>
+      <pre><span class="c">// 여기서 innerHTML을 쓰면 1초마다 DOM을 갈아엎어서 감정일기 포커스 소실 같은 버그가 생긴다.
+// textContent/style만 만진다.</span>
+
+<span class="c">// 상태 저장. save()가 scheduleDriveSave()를 부르므로 매초 부르면 드라이브 동기화도 매초 돈다.
+// 상태 전이에서만 호출할 것.</span></pre>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="rail">
+    <div class="note"><b>code/</b>파일마다 상단 주석에<br>배경을 적었다</div>
+    <div class="body">
+      <p class="eyebrow">코드 발췌</p>
+      <h2>코드 발췌 7개</h2>
+
+      <div class="cards">
+        <div class="card">
+          <div class="card-h"><span class="idx">01</span><h3>경과시간 기반 타이머</h3></div>
+          <p>아이폰은 화면을 끄면 JS를 멈춘다. <code style="font-family:var(--f-mono);font-size:.9em">남은시간--</code> 방식이면 타이머도 같이 멈춘다. 시작 시각만 저장하고 화면 숫자는 틱마다 (지금 - 시작 시각)으로 다시 계산한다.</p>
+          <span class="learn">js/pomodoro.js</span>
+        </div>
+        <div class="card">
+          <div class="card-h"><span class="idx">02</span><h3>지운 메모가 되살아나는 문제</h3></div>
+          <p>로컬/원격 두 쪽만 비교해서는 방금 만든 메모와 다른 기기에서 지운 메모가 구분이 안 됐다. 지난 pull 때의 스냅샷을 같이 비교하게 했다.</p>
+          <span class="learn">js/sync.js mergeMemos()</span>
+        </div>
+        <div class="card">
+          <div class="card-h"><span class="idx">03</span><h3>마인드맵 노드 단위 머지</h3></div>
+          <p>Yjs나 Automerge는 번들러가 필요해서 안 썼다. 다룰 건 노드 배열과 엣지 배열뿐이라 필드별 병합 규칙을 직접 정했다.</p>
+          <span class="learn">js/sync.js _mergeMindmapPair()</span>
+        </div>
+        <div class="card">
+          <div class="card-h"><span class="idx">04</span><h3>IndexedDB 전환</h3></div>
+          <p>localStorage 5MB 초과. IndexedDB는 비동기인데 <code style="font-family:var(--f-mono);font-size:.9em">load()</code>는 동기로 앱 전체에서 쓰이고 있었다. 메모리 캐시를 두고 부팅 때 동기로 채워서 호출하는 쪽은 안 고쳤다.</p>
+          <span class="learn">js/utils.js</span>
+        </div>
+        <div class="card">
+          <div class="card-h"><span class="idx">05</span><h3>한글 검색 0건</h3></div>
+          <p>'까르보나라'가 검색이 안 됐다. macOS를 거친 제목이 NFD(자모 분리)로 저장돼 있었다. 메모 49개를 전부 확인해 19개를 찾았고, 코드와 데이터를 둘 다 고쳤다.</p>
+          <span class="learn">js/memo.js</span>
+        </div>
+        <div class="card">
+          <div class="card-h"><span class="idx">06</span><h3>가끔 뜨는 "동기화 실패"</h3></div>
+          <p>동기화는 멀쩡한데 헤더 표시만 빨갛게 바뀌던 오탐. 파다 보니 재시도 타이머가 밀린 변경을 영영 안 올리는 경로도 나와서 같이 고쳤다.</p>
+          <span class="learn">js/drive-client.js, js/sync.js</span>
+        </div>
+        <div class="card">
+          <div class="card-h"><span class="idx">07</span><h3>입력 중 커서가 사라짐</h3></div>
+          <p>화면을 다시 그리는 경로가 셋(동기화 응답, 구글 캘린더 응답, 자동저장)이었다. 입력 중인지 판단하는 함수를 하나 두고 렌더 경로마다 확인하게 했다.</p>
+          <span class="learn">js/calendar.js</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="rail">
+    <div class="note"><b>−1,813줄</b>저장 데이터를<br>열어보고 정했다</div>
+    <div class="body">
+      <p class="eyebrow">기능 삭제</p>
+      <h2>안 쓰는 기능은 지웠다</h2>
+      <p class="lede">AI는 기능을 빼자는 제안을 먼저 하지 않는다. 쓰고 있는지는 저장된 데이터를 열어 보고 판단했다.</p>
+
+      <ul class="cuts">
+        <li>
+          <span class="what">가계부, 루틴</span><span class="n">−1,144</span>
+          <p class="why">가계부는 동기화 데이터에 <code style="font-family:var(--f-mono);font-size:.85em">ledger</code> 키가 아예 없었고 탭도 숨겨져 있었다. 루틴은 설정 5개에 체크 기록 3일치, 마지막 기록이 5월 26일. 루틴 설정은 JSON으로 백업해 두고 지웠다.</p>
+        </li>
+        <li>
+          <span class="what">도달 불가 페이지 2개</span><span class="n">−669</span>
+          <p class="why">루틴을 지운 뒤 같은 식으로 코드를 훑다가 찾았다. 열 방법이 없는 페이지인데 렌더 함수는 캘린더를 그릴 때마다 세 곳에서 호출되고 있었다.</p>
+        </li>
+        <li>
+          <span class="what">데일리노트</span><span class="n">revert</span>
+          <p class="why">붙이고 30분 남짓 만에 되돌렸다. 캘린더, 감정일기와 역할이 겹쳤다.</p>
+        </li>
+        <li>
+          <span class="what">CSS 전면 재작성</span><span class="n">7,994줄에서 2,076줄</span>
+          <p class="why">스타일 수정을 계속 맡기면 기존 규칙을 이기려고 <code style="font-family:var(--f-mono);font-size:.85em">!important</code>가 붙고, 그걸 또 이기려고 더 붙는다. 1,048개에서 15개로 줄였다. 이후 다시 늘어서 8월 기준 6,447줄이다.</p>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="rail">
+    <div class="note"><b>docs/04</b>앱 쪽 코드는<br>새로 짜지 않았다</div>
+    <div class="body">
+      <p class="eyebrow">작업 로그</p>
+      <h2>메모 앱을 작업 로그 저장소로 썼다</h2>
+      <p>이 앱은 메모를 Google Drive에 <code style="font-family:var(--f-mono);font-size:.9em">.md</code>로 저장한다. 그래서 다른 프로젝트의 Claude Code 세션이 끝날 때 같은 폴더에 작업 기록을 남기게 했다.</p>
+      <pre>AI 세션(맥)  ──세션 끝에 .md 생성──▶  Drive  ──동기화──▶  폰의 메모 앱
+                                                              │
+                                                        <b>## 코멘트</b> 작성
+                                                              │
+AI 세션(맥)  ◀──다음 세션 시작 시 최근 3개를 읽고 반영──────────┘</pre>
+      <p style="margin-top:1.4rem">규약은 대부분 사고를 겪고 추가했다. 예를 들어 본문 끝에 해시태그를 꼭 넣으라는 규칙이 있다.
+      앱은 본문의 <code style="font-family:var(--f-mono);font-size:.9em">#태그</code>를 기준으로 tags를 다시 계산하는데, 프론트매터에만 태그를 쓴 기록은 폰에서 코멘트를 한 글자 치는 순간 프로젝트에서 빠졌다.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="rail">
+    <div class="note"><b>저장소</b>코드 발췌와 문서</div>
+    <div class="body">
+      <p class="eyebrow">구성</p>
+      <h2>저장소 구성</h2>
+      <div class="tree"><b>README.md</b>                          <i>전체 정리, 재현 명령어</i>
+<b>docs/</b>
+  01-workflow.md                <i>작업 흐름과 검증</i>
+  02-conventions.md             <i>CLAUDE.md 발췌</i>
+  03-decisions.md               <i>결정별 배경</i>
+  04-agent-loop.md              <i>작업 로그 규약</i>
+<b>code/</b>                          <i>발췌 7개, 파일마다 배경 주석</i>
+  01-elapsed-timer.js
+  02-three-way-deletion.js
+  03-crdt-lite-mindmap.js
+  04-idb-primary-kv.js
+  05-nfc-search.js
+  06-silent-token-refresh.js
+  07-focus-preserving-render.js</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="rail">
+    <div class="note"><b>한계</b></div>
+    <div class="body">
+      <p class="eyebrow">한계</p>
+      <h2>안 되는 것</h2>
+      <ul class="limits">
+        <li>자동화 테스트가 없다. 순수 함수를 떼어 돌려보거나 실제 데이터와 대조하고 브라우저에서 확인하는 식이었다. 회귀는 못 잡는다.</li>
+        <li>혼자 쓰는 앱이다. 여러 명이 같이 작업하는 저장소에서도 통할지는 모른다.</li>
+        <li>빌드 없는 바닐라 JS라 치른 비용이 있다. 발췌 07의 포커스 문제는 프레임워크였으면 안 생겼을 것이다.</li>
+        <li>규칙은 전부 문제가 터진 뒤에 생겼다.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="rail">
+    <div class="note"></div>
+    <div class="body">
+      <p>바닐라 JS, 빌드 시스템 없음, PWA, Google Drive 동기화, Cloudflare Worker (OAuth PKCE 프록시)</p>
+      <p style="margin-top:1rem">앱 코드는 <a href="https://github.com/thefirstplum/mindflow">thefirstplum/mindflow</a>에 있고, 여기에는 설명용 코드 발췌와 문서만 모아 두었다.</p>
+    </div>
+  </div>
+</footer>
+
+</div>
